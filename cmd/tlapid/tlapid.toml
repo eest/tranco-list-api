@@ -1,0 +1,30 @@
+# This is a sample configuration file. Only changes to the defaults
+# listed below are needed.
+
+[server]
+#address = "127.0.0.1"
+#port = 443
+#ratelimit = 1.0
+#burstlimit = 1
+#limitcleanupinterval = "1m"
+#limitcleanupage = "1m"
+#hostwhitelist = [ "api.example.com" ]
+#statsaddress = "127.0.0.1"
+#statsport = 8181
+
+[database]
+#host = "localhost"
+#port = 5432
+#user = "trancolist_ro"
+#password = ""
+#dbname = "trancolist"
+#sslmode = "verify-full"
+
+[api]
+#referencebaseurl = "https://tranco-list.eu/list"
+#rankmin = 1
+#rankmax = 1000000
+#countmin = 1
+#countmax = 100
+#defaultstart = 1
+#defaultcount = 10

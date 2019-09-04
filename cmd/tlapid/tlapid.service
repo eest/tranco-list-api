@@ -1,0 +1,15 @@
+[Unit]
+Description=Tranco list API service
+Wants=network-online.target postgresql.service
+After=network-online.target postgresql.service
+
+[Service]
+Type=simple
+User=_tlapid
+Group=_tlapid
+WorkingDirectory=/home/_tlapid
+ExecStart=/home/_tlapid/tlapid -prod -stats -config /home/_tlapid/tlapid.toml
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+[Unit]
+Description=Tranco list database writer
+Wants=network-online.target postgresql.service
+After=network-online.target postgresql.service
+
+[Service]
+Type=simple
+User=_tldbwriter
+Group=_tldbwriter
+ExecStart=/home/_tldbwriter/tldbwriter -config /home/_tldbwriter/tldbwriter.toml
+
+[Install]
+WantedBy=multi-user.target

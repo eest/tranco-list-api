@@ -1,0 +1,10 @@
+# This is a sample configuration file. Only changes to the defaults
+# listed below are needed.
+
+[database]
+#host = "localhost"
+#port = 5432
+#user = "trancolist"
+#password = ""
+#dbname = "trancolist"
+#sslmode = "verify-full"
