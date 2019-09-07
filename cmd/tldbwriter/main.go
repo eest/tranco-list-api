@@ -3,7 +3,9 @@ package main
 import (
 	"archive/zip"
 	"bufio"
+	crand "crypto/rand"
 	"database/sql"
+	"encoding/binary"
 	"flag"
 	"fmt"
 	"github.com/BurntSushi/toml"
@@ -11,6 +13,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
@@ -26,9 +29,19 @@ const (
 	serviceName = "trancolist"
 )
 
+// updaterData holds information passed to the updater loop.
+type updaterData struct {
+	config   *mainConfig
+	db       *sql.DB
+	hc       *http.Client
+	chanErr  chan error
+	interval time.Duration
+}
+
 // mainConfig holds information read from the config file.
 type mainConfig struct {
 	Database databaseConfig
+	Updater  updaterConfig
 }
 
 // databaseConfig contains settings for the database connection.
@@ -39,6 +52,13 @@ type databaseConfig struct {
 	Password string
 	DBName   string
 	SSLMode  string
+}
+
+// updaterConfig contains settings for the main updater loop
+type updaterConfig struct {
+	Interval  string
+	JitterMin int
+	JitterMax int
 }
 
 // readConfig parses the supplied configuration file or falls back to
@@ -65,6 +85,11 @@ func newConfig() *mainConfig {
 			Password: "",
 			DBName:   serviceName,
 			SSLMode:  "verify-full",
+		},
+		Updater: updaterConfig{
+			Interval:  "1h",
+			JitterMin: 0,
+			JitterMax: 300,
 		},
 	}
 }
@@ -480,17 +505,43 @@ func openDB(connStr string) (*sql.DB, error) {
 }
 
 // runUpdater is the main loop continually trying to updating the database
-func runUpdater(db *sql.DB, hc *http.Client, ec chan error) {
+func runUpdater(ud updaterData) {
 	var err error
 
 	for {
-		err = checkForUpdates(db, hc)
+		err = checkForUpdates(ud.db, ud.hc)
 		if err != nil {
-			ec <- err
+			ud.chanErr <- err
 			return
 		}
-		time.Sleep(3600 * time.Second)
+
+		// Get a random number of seconds between JitterMin and JitterMax (inclusive).
+		jitter := time.Duration(
+			ud.config.Updater.JitterMin+rand.Intn(
+				ud.config.Updater.JitterMax-ud.config.Updater.JitterMin+1,
+			),
+		) * time.Second
+
+		sleepDuration := ud.interval + jitter
+		log.Printf("time until next check: %s", sleepDuration.String())
+		time.Sleep(sleepDuration)
 	}
+}
+
+// getRandomSeed returns a seed based on cryptographically secure pseudorandom numbers
+func getRandomSeed() (int64, error) {
+
+	// Mix of https://godoc.org/crypto/rand and
+	// https://stackoverflow.com/questions/12321133/golang-random-number-generator-how-to-seed-properly
+	c := 10
+	b := make([]byte, c)
+	_, err := crand.Read(b)
+	if err != nil {
+		return 0, err
+	}
+
+	return int64(binary.LittleEndian.Uint64(b)), nil
+
 }
 
 func main() {
@@ -500,6 +551,19 @@ func main() {
 
 	// Fetch configuration settings.
 	config := readConfig(configFile)
+
+	// Seed the PRNG with some unknown data to be able to add some random
+	// jitter to the sleep duration in the main loop.
+	seed, err := getRandomSeed()
+	if err != nil {
+		log.Fatal(err)
+	}
+	rand.Seed(seed)
+
+	interval, err := time.ParseDuration(config.Updater.Interval)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Build database string.
 	connStr := fmt.Sprintf(
@@ -521,8 +585,8 @@ func main() {
 	sc := make(chan os.Signal)
 	signal.Notify(sc, os.Interrupt, syscall.SIGTERM)
 
-	// ec is used for reading errors from the updater loop
-	ec := make(chan error)
+	// ce is used for reading errors from the updater loop
+	ce := make(chan error)
 
 	// Make sure we do not hang forever in HTTP connections. For good
 	// timeout values look at the 'fetch' duration for a successfull request:
@@ -530,10 +594,19 @@ func main() {
 	hc := &http.Client{
 		Timeout: 10 * time.Second,
 	}
-	go runUpdater(db, hc, ec)
+
+	ud := updaterData{
+		config:   config,
+		db:       db,
+		hc:       hc,
+		chanErr:  ce,
+		interval: interval,
+	}
+
+	go runUpdater(ud)
 
 	select {
-	case err := <-ec:
+	case err := <-ce:
 		log.Fatal(err)
 	case sig := <-sc:
 		log.Printf("received signal \"%s\", exiting", sig)

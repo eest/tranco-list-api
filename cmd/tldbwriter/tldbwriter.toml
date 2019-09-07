@@ -8,3 +8,8 @@
 #password = ""
 #dbname = "trancolist"
 #sslmode = "verify-full"
+
+[updater]
+#interval = "1h"
+#jittermin = 0
+#jittermax = 300
