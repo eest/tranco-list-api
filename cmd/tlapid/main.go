@@ -73,6 +73,7 @@ type apiConfig struct {
 	CountMax         int64
 	DefaultStart     int64
 	DefaultCount     int64
+	Path             string
 }
 
 // readConfig parses the supplied configuration file or falls back to
@@ -120,6 +121,7 @@ func newConfig() *mainConfig {
 			CountMax:         100,
 			DefaultStart:     1,
 			DefaultCount:     10,
+			Path:             "/api",
 		},
 	}
 }
@@ -457,11 +459,12 @@ func muxWrapper(handler http.Handler, rl *rateLimit) http.HandlerFunc {
 // request is the struct that is passed to our API handler function, it allows us to
 // pass anything we need without depending on global variables.
 type request struct {
-	w       http.ResponseWriter
-	req     *http.Request
-	db      *sql.DB
-	config  *mainConfig
-	timeLoc *time.Location
+	w        http.ResponseWriter
+	req      *http.Request
+	db       *sql.DB
+	config   *mainConfig
+	timeLoc  *time.Location
+	basePath string
 }
 
 // handlerWrapper allows us to pass the 'request' struct to our API handler
@@ -469,22 +472,31 @@ type request struct {
 //
 // The resulting call order:
 // muxWrapper -> ServeMux -> handlerWrapper -> tlAPIHandler
-func handlerWrapper(handler func(*request), db *sql.DB, config *mainConfig, timeLoc *time.Location) http.HandlerFunc {
+func handlerWrapper(handler func(*request), db *sql.DB, config *mainConfig, timeLoc *time.Location, basePath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		r := &request{
-			w:       w,
-			req:     req,
-			db:      db,
-			config:  config,
-			timeLoc: timeLoc,
+			w:        w,
+			req:      req,
+			db:       db,
+			config:   config,
+			timeLoc:  timeLoc,
+			basePath: basePath,
 		}
 
 		handler(r)
 	}
 }
 
+func badRequestHint(w http.ResponseWriter, basePath string) {
+	http.Error(
+		w,
+		fmt.Sprintf("Bad Request: try %s/sites, %s/site/google.com or %s/rank/1", basePath, basePath, basePath),
+		http.StatusBadRequest,
+	)
+}
+
 // tlAPIHandler is the main workhorse of the API, it deals with all requests
-// sent to "/api"
+// sent to API endpoint.
 func tlAPIHandler(r *request) {
 
 	start := r.config.API.DefaultStart
@@ -495,17 +507,13 @@ func tlAPIHandler(r *request) {
 	switch r.req.Method {
 	case "GET":
 		switch r.req.URL.Path {
-		case "/api", "/api/":
-			http.Error(
-				r.w,
-				"Bad Request: try /api/sites, /api/site/google.com or /api/rank/1",
-				http.StatusBadRequest,
-			)
+		case r.config.API.Path, r.config.API.Path + "/":
+			badRequestHint(r.w, r.basePath)
 			return
 		}
 
 		switch r.req.URL.Path {
-		case "/api/sites", "/api/sites/":
+		case r.basePath + "/sites", r.basePath + "/sites/":
 			startParam := r.req.URL.Query()["start"]
 			if len(startParam) > 1 {
 				log.Printf("tlAPIHandler more than 1 startParam")
@@ -610,8 +618,10 @@ func tlAPIHandler(r *request) {
 			return
 		}
 
+		// Throw "Bad Request" if any of the supported paths are called
+		// without the necessary parameter at the end.
 		switch r.req.URL.Path {
-		case "/api/rank", "/api/rank/", "/api/site", "/api/site/":
+		case r.basePath + "/rank", r.basePath + "/rank/", r.basePath + "/site", r.basePath + "/site/":
 			http.Error(
 				r.w,
 				http.StatusText(http.StatusBadRequest),
@@ -620,14 +630,27 @@ func tlAPIHandler(r *request) {
 			return
 		}
 
+		var apiPartsLen int
+
+		// An API path string of "/api" splits into two parts
+		// which we need to skip over, but an API path of "/"
+		// also splits into two parts, but we only need to skip
+		// over one, so handle that special case here.
+		if r.basePath == "" {
+			apiPartsLen = 1
+		} else {
+			apiPartsLen = len(strings.Split(r.config.API.Path, "/"))
+		}
+
 		// curl -s 127.0.0.1:8080/api/rank/1
 		// 2019/08/31 00:40:28 urlParts: []string{"", "api", "rank", "1"}
 		urlParts := strings.Split(r.req.URL.Path, "/")
-		switch len(urlParts) {
-		case 4:
-			switch urlParts[2] {
+		urlPartsLen := len(urlParts)
+		switch urlPartsLen - apiPartsLen {
+		case 2:
+			switch urlParts[apiPartsLen] {
 			case "rank":
-				rank, err := strconv.ParseInt(urlParts[3], 10, 64)
+				rank, err := strconv.ParseInt(urlParts[apiPartsLen+1], 10, 64)
 				if err != nil {
 					log.Printf("tlAPIHandler rank ParseInt: %s", err)
 					http.Error(
@@ -681,7 +704,7 @@ func tlAPIHandler(r *request) {
 				}
 				return
 			case "site":
-				site := urlParts[3]
+				site := urlParts[apiPartsLen+1]
 				ar, err := siteWithNamePayload(r.db, site, r.timeLoc, r.config)
 				if err != nil {
 					log.Printf("siteWithNamePayload: %s", err)
@@ -749,6 +772,26 @@ func main() {
 	// Fetch configuration settings.
 	config := readConfig(configFile)
 
+	if config.API.Path == "" {
+		// An empty Path will panic the server, convert it to "/":
+		// panic: http: invalid pattern
+		config.API.Path = "/"
+	}
+
+	if config.API.Path != "/" {
+		if strings.HasSuffix(config.API.Path, "/") {
+			// Strip a trailing "/" to make later offset calculations easier
+			config.API.Path = strings.TrimSuffix(config.API.Path, "/")
+		}
+	}
+
+	// When API Path is "/" we need to exclude it in comparisons and
+	// logs since otherwise that becomes "//sites" etc.
+	basePath := ""
+	if config.API.Path != "/" {
+		basePath = config.API.Path
+	}
+
 	// Build address string.
 	connStr := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
@@ -769,8 +812,25 @@ func main() {
 	// the publicly exposed service
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/api", handlerWrapper(tlAPIHandler, db, config, timeLoc))
-	mux.HandleFunc("/api/", handlerWrapper(tlAPIHandler, db, config, timeLoc))
+	mux.HandleFunc(config.API.Path, handlerWrapper(tlAPIHandler, db, config, timeLoc, basePath))
+	if config.API.Path != "/" {
+		// Make it so we handle requests both with and without a trailing "/"
+		// on the API path, since we want to match requests for
+		// subtrees like /rank and /site as well as the plain API path.
+		mux.HandleFunc(config.API.Path+"/", handlerWrapper(tlAPIHandler, db, config, timeLoc, basePath))
+	}
+
+	// For a several layers deep API path like "/api/v1" or more we want to respond with
+	// a "Bad Request" pointing to existing paths rather than "Not Found"
+	// to a query for any path above that point
+	//if len(strings.Split(config.API.Path, "/")) > 2 {
+	if config.API.Path != "/" {
+		mux.HandleFunc("/", func(basePath string) func(w http.ResponseWriter, req *http.Request) {
+			return func(w http.ResponseWriter, req *http.Request) {
+				badRequestHint(w, basePath)
+			}
+		}(basePath))
+	}
 
 	rl := newRateLimit(config.Server.RateLimit, config.Server.BurstLimit)
 

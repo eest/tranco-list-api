@@ -21,6 +21,7 @@
 #sslmode = "verify-full"
 
 [api]
+#path = "/api"
 #referencebaseurl = "https://tranco-list.eu/list"
 #rankmin = 1
 #rankmax = 1000000
