@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -886,6 +887,11 @@ func main() {
 
 	// Start rate limit cleanup function in the background.
 	go rateLimitCleanup(rl, cleanupIntervalDuration, cleanupAgeDuration)
+
+	// Add runtime route to the stats listener
+	http.HandleFunc("/runtime", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "%s\n", runtime.Version())
+	})
 
 	// Start stats listener where expvar will make /debug/vars available
 	if *statsFlag {
