@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -545,6 +546,8 @@ func getRandomSeed() (int64, error) {
 }
 
 func main() {
+	log.Printf("go runtime version: %s", runtime.Version())
+
 	// Handle flags.
 	configFile := flag.String("config", "", "configuration file")
 	flag.Parse()
