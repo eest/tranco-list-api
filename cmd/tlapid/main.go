@@ -128,23 +128,6 @@ type siteEntry struct {
 	Rank int64  `json:"rank"`
 }
 
-// openDB creates and validates the DB connection
-func openDB(connStr string) (*sql.DB, error) {
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		return nil, err
-	}
-
-	// Test connection to database. This speeds up the initial query from a
-	// client after the service has started.
-	err = db.Ping()
-	if err != nil {
-		return nil, err
-	}
-
-	return db, nil
-}
-
 // latestListID returns the DB id and name of the most recently added list
 func latestListID(tx *sql.Tx) (int64, string, time.Time, error) {
 
@@ -791,7 +774,14 @@ func main() {
 		config.Database.SSLMode,
 	)
 
-	db, err := openDB(connStr)
+	db, err := tlapi.OpenDB(connStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Test connection to database. This speeds up the initial query from a
+	// client after the service has started.
+	err = tlapi.PingDB(db)
 	if err != nil {
 		log.Fatal(err)
 	}

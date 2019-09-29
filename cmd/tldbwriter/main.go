@@ -480,16 +480,6 @@ func checkForUpdates(db *sql.DB, hc *http.Client) error {
 	return nil
 }
 
-// openDB creates the DB connection
-func openDB(connStr string) (*sql.DB, error) {
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		return nil, err
-	}
-
-	return db, nil
-}
-
 // runUpdater is the main loop continually trying to updating the database
 func runUpdater(ud updaterData) {
 	var err error
@@ -564,7 +554,7 @@ func main() {
 		config.Database.SSLMode,
 	)
 
-	db, err := openDB(connStr)
+	db, err := tlapi.OpenDB(connStr)
 	if err != nil {
 		log.Fatal(err)
 	}
