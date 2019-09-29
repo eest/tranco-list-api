@@ -36,18 +36,8 @@ type updaterData struct {
 
 // mainConfig holds information read from the config file.
 type mainConfig struct {
-	Database databaseConfig
+	Database tlapi.DatabaseConfig
 	Updater  updaterConfig
-}
-
-// databaseConfig contains settings for the database connection.
-type databaseConfig struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	DBName   string
-	SSLMode  string
 }
 
 // updaterConfig contains settings for the main updater loop
@@ -74,7 +64,7 @@ func readConfig(configFile *string) *mainConfig {
 // NewConfig returns default configuration
 func newConfig() *mainConfig {
 	return &mainConfig{
-		Database: databaseConfig{
+		Database: tlapi.DatabaseConfig{
 			Host:     "localhost",
 			Port:     5432,
 			User:     tlapi.ServiceName,

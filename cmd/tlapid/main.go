@@ -33,7 +33,7 @@ const (
 // mainConfig holds information read from the config file.
 type mainConfig struct {
 	Server   serverConfig
-	Database databaseConfig
+	Database tlapi.DatabaseConfig
 	API      apiConfig
 }
 
@@ -50,16 +50,6 @@ type serverConfig struct {
 	StatsPort            int
 	DevAddress           string
 	DevPort              int
-}
-
-// databaseConfig contains settings for the database connection.
-type databaseConfig struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	DBName   string
-	SSLMode  string
 }
 
 // apiConfig contains settings regarding the Tranco list API
@@ -103,7 +93,7 @@ func newConfig() *mainConfig {
 			DevAddress:           ipv4Localhost,
 			DevPort:              8080,
 		},
-		Database: databaseConfig{
+		Database: tlapi.DatabaseConfig{
 			Host:     "localhost",
 			Port:     5432,
 			User:     tlapi.ServiceName,
