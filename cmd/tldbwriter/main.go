@@ -9,6 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/BurntSushi/toml"
+	"github.com/eest/tranco-list-api/pkg/tlapi"
 	"github.com/lib/pq"
 	"io"
 	"io/ioutil"
@@ -22,12 +23,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-)
-
-const (
-	// serviceName is the general name of this service that is the default name
-	// used for databases and such.
-	serviceName = "trancolist"
 )
 
 // updaterData holds information passed to the updater loop.
@@ -82,9 +77,9 @@ func newConfig() *mainConfig {
 		Database: databaseConfig{
 			Host:     "localhost",
 			Port:     5432,
-			User:     serviceName,
+			User:     tlapi.ServiceName,
 			Password: "",
-			DBName:   serviceName,
+			DBName:   tlapi.ServiceName,
 			SSLMode:  "verify-full",
 		},
 		Updater: updaterConfig{

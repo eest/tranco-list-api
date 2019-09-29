@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/BurntSushi/toml"
+	"github.com/eest/tranco-list-api/pkg/tlapi"
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/acme/autocert"
 	"golang.org/x/time/rate"
@@ -27,10 +28,6 @@ const (
 	// ipv4Localhost is the default address we listen on when not configured
 	// by the config file.
 	ipv4Localhost = "127.0.0.1"
-
-	// serviceName is the general name of this service that is the default name
-	// used for databases and such.
-	serviceName = "trancolist"
 )
 
 // mainConfig holds information read from the config file.
@@ -109,9 +106,9 @@ func newConfig() *mainConfig {
 		Database: databaseConfig{
 			Host:     "localhost",
 			Port:     5432,
-			User:     serviceName,
+			User:     tlapi.ServiceName,
 			Password: "",
-			DBName:   serviceName,
+			DBName:   tlapi.ServiceName,
 			SSLMode:  "verify-full",
 		},
 		API: apiConfig{
