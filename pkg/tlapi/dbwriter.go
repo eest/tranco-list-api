@@ -283,6 +283,15 @@ func checkForUpdates(db *sql.DB, hc *http.Client) error {
 		if err != nil {
 			return err
 		}
+
+		vacTable := "sites"
+		vacuumAnalyzeStart := time.Now()
+		err = vacuumAnalyze(db, vacTable)
+		if err != nil {
+			return err
+		}
+		vacuumAnalyzeDuration := time.Since(vacuumAnalyzeStart)
+		log.Printf("VACUUM ANALYZE %s: %s", vacTable, vacuumAnalyzeDuration)
 	} else {
 		log.Printf("list %s already present in database, nothing to do", ulID)
 		err = tx.Rollback()
