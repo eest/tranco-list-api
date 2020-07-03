@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -310,8 +311,12 @@ func runUpdater(ud updaterData) {
 	for {
 		err = checkForUpdates(ud.db, ud.hc)
 		if err != nil {
-			ud.chanErr <- err
-			return
+			if nerr, ok := err.(net.Error); ok && nerr.Timeout() {
+				log.Println(err)
+			} else {
+				ud.chanErr <- err
+				return
+			}
 		}
 
 		// Get a random number of seconds between JitterMin and JitterMax (inclusive).
