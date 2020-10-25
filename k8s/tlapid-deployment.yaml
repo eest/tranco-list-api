@@ -6,7 +6,7 @@ metadata:
   labels:
     app: tlapid
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: tlapid
@@ -32,3 +32,14 @@ spec:
         - name: secret-volume
           secret:
             secretName: tlapid
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  namespace: tlapi
+  name: tlapid-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: tlapid
