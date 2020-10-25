@@ -11,6 +11,7 @@
 #hostwhitelist = [ "api.example.com" ]
 #statsaddress = "127.0.0.1"
 #statsport = 8181
+#httpchallengeport = 80
 
 [database]
 #host = "localhost"

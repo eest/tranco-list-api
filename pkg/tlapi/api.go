@@ -48,6 +48,7 @@ func newAPIServiceConfig() *apiServiceConfig {
 			StatsPort:            8181,
 			DevAddress:           ipv4Localhost,
 			DevPort:              8080,
+			HTTPChallengePort:    80,
 		},
 		Database: databaseConfig{
 			Host:     "localhost",
@@ -712,7 +713,15 @@ func RunAPIService() error {
 
 	if *prodFlag {
 		// Enable Let's Encrypt http-01 listener
-		go http.ListenAndServe(":80", acm.HTTPHandler(nil))
+		go func() {
+			err := http.ListenAndServe(
+				fmt.Sprintf(":%d", config.Server.HTTPChallengePort),
+				acm.HTTPHandler(nil),
+			)
+			if err != nil {
+				log.Printf("error opening autocert http-01 listener: %s", err)
+			}
+		}()
 	}
 
 	// Start listening.

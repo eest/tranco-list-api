@@ -7,6 +7,7 @@ metadata:
   annotations:
     service.beta.kubernetes.io/do-loadbalancer-protocol: "https"
     service.beta.kubernetes.io/do-loadbalancer-algorithm: "round_robin"
+    service.beta.kubernetes.io/do-loadbalancer-http-ports: "80"
     service.beta.kubernetes.io/do-loadbalancer-tls-ports: "443"
     service.beta.kubernetes.io/do-loadbalancer-tls-passthrough: "true"
 spec:
@@ -14,6 +15,10 @@ spec:
   selector:
     app: tlapid
   ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
     - name: https
       protocol: TCP
       port: 443

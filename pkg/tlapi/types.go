@@ -28,6 +28,7 @@ type apiServerConfig struct {
 	StatsPort            int
 	DevAddress           string
 	DevPort              int
+	HTTPChallengePort    int
 }
 
 // apiConfig contains settings regarding the Tranco list API
