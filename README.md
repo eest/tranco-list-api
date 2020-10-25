@@ -11,11 +11,26 @@ The parts involved:
 * `tlapid` responds to HTTP requests based on the database contents.
 
 ## Building containers (substitute "eest" with your own account or registry)
+```
 $ docker build -t eest/tldbwriter:vX.Y.Z -f Dockerfile-tldbwriter .
 $ docker push eest/tldbwriter:vX.Y.Z
 
 $ docker build -t eest/tlapid:vX.Y.Z -f Dockerfile-tlapid .
 $ docker push eest/tlapid:vX.Y.Z
+```
+
+## Managing config secrets used by containers
+Using the pipe-to-kubectl method allows later updates to the secret if the config needs to change.
+```
+$ kubectl create secret generic tldbwriter --from-file=config=./tldbwriter.toml -n tlapi --dry-run=client -o yaml | kubectl apply -f -
+$ kubectl create secret generic tlapid --from-file=config=./tlapid.toml -n tlapi --dry-run=client -o yaml | kubectl apply -f -
+```
+
+After a new configuration file is uploaded the affected deployment will need to be restarted
+using something like this:
+```
+$ kubectl rollout restart deployment tlapid -n tlapi
+```
 
 ## Currently supported endpoints
 
