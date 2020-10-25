@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: tlapi
+  name: tldbwriter
+  labels:
+    app: tldbwriter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tldbwriter
+  template:
+    metadata:
+      labels:
+        app: tldbwriter
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+      - name: tldbwriter
+        image: eest/tldbwriter:vX.Y.Z
+        args: ["-config", "/secrets/tldbwriter/config"]
+        volumeMounts:
+          - name: secret-volume
+            readOnly: true
+            mountPath: "/secrets/tldbwriter"
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: tldbwriter

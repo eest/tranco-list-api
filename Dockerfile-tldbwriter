@@ -1,0 +1,23 @@
+# Start with a build stage that will create the 'tldbwriter' binary.
+FROM golang:1.15.2-alpine3.12 AS builder
+
+# We use the new go module support, so build stuff in a clean directory
+# outside GOPATH.
+WORKDIR /build
+
+# Add code to the build directory.
+COPY . .
+
+# Create the 'tldbwriter' binary.
+RUN cd cmd/tldbwriter && CGO_ENABLED=0 go build -tags=netgo
+
+# Create a new stage, this is the container we will actually run.
+# Use distroless instead of "scratch" to get a world-writeable /tmp needed when
+# downloading a new list file as a non-root user.
+FROM gcr.io/distroless/static
+
+# Copy the static executable from the builder stage.
+COPY --from=builder /build/cmd/tldbwriter/tldbwriter /
+
+# Start the service.
+ENTRYPOINT ["/tldbwriter"]

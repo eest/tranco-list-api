@@ -29,3 +29,11 @@
 #countmax = 100
 #defaultstart = 1
 #defaultcount = 10
+
+[certcachedb]
+#host = "localhost"
+#port = 5432
+#user = "trancolist_certcache_rw"
+#password = ""
+#dbname = "trancolist"
+#sslmode = "verify-full"

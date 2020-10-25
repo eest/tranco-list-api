@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: tlapi
+  name: tlapid
+  labels:
+    app: tlapid
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tlapid
+  template:
+    metadata:
+      labels:
+        app: tlapid
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+      - name: tlapid
+        image: eest/tlapid:vX.Y.Z
+        args: ["-config", "/secrets/tlapid/config", "-prod", "-ecc"]
+        volumeMounts:
+          - name: secret-volume
+            readOnly: true
+            mountPath: "/secrets/tlapid"
+        securityContext:
+          readOnlyRootFilesystem: true
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: tlapid

@@ -10,6 +10,13 @@ The parts involved:
 * `tldbwriter` continously checks for the latest list ID and loads it into the database.
 * `tlapid` responds to HTTP requests based on the database contents.
 
+## Building containers (substitute "eest" with your own account or registry)
+$ docker build -t eest/tldbwriter:vX.Y.Z -f Dockerfile-tldbwriter .
+$ docker push eest/tldbwriter:vX.Y.Z
+
+$ docker build -t eest/tlapid:vX.Y.Z -f Dockerfile-tlapid .
+$ docker push eest/tlapid:vX.Y.Z
+
 ## Currently supported endpoints
 
 ### Get the top ten sites

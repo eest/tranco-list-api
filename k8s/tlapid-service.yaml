@@ -1,0 +1,20 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  namespace: tlapi
+  name: tlapid
+  annotations:
+    service.beta.kubernetes.io/do-loadbalancer-protocol: "https"
+    service.beta.kubernetes.io/do-loadbalancer-algorithm: "round_robin"
+    service.beta.kubernetes.io/do-loadbalancer-tls-ports: "443"
+    service.beta.kubernetes.io/do-loadbalancer-tls-passthrough: "true"
+spec:
+  type: LoadBalancer
+  selector:
+    app: tlapid
+  ports:
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 8443

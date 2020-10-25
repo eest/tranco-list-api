@@ -67,6 +67,14 @@ func newAPIServiceConfig() *apiServiceConfig {
 			DefaultCount:     10,
 			Path:             "/api",
 		},
+		CertCacheDB: databaseConfig{
+			Host:     "localhost",
+			Port:     5432,
+			User:     serviceName + "_certcache_rw",
+			Password: "",
+			DBName:   serviceName,
+			SSLMode:  "verify-full",
+		},
 	}
 }
 
@@ -548,6 +556,7 @@ func RunAPIService() error {
 	// Handle flags.
 	configFile := flag.String("config", "", "configuration file")
 	prodFlag := flag.Bool("prod", false, "enable Let's Encrypt manager and bind TLS port")
+	eccFlag := flag.Bool("ecc", false, "enable external cache for Let's Encrypt cert data")
 	statsFlag := flag.Bool("stats", false, "enable stats listener where expvar data is available")
 	flag.Parse()
 
@@ -634,9 +643,18 @@ func RunAPIService() error {
 	// Handle Let's Encrypt certificates automatically
 	if *prodFlag {
 		acm = &autocert.Manager{
-			Cache:      autocert.DirCache("autocert-dir"),
 			Prompt:     autocert.AcceptTOS,
 			HostPolicy: autocert.HostWhitelist(config.Server.HostWhitelist...),
+		}
+
+		if *eccFlag {
+			ecc, err := newPsqlCertCache(config)
+			if err != nil {
+				return err
+			}
+			acm.Cache = ecc
+		} else {
+			acm.Cache = autocert.DirCache("autocert-dir")
 		}
 	}
 

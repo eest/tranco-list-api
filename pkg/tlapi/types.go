@@ -9,9 +9,10 @@ import (
 
 // apiServiceConfig holds information read from the config file used by the API service.
 type apiServiceConfig struct {
-	Server   apiServerConfig
-	Database databaseConfig
-	API      apiConfig
+	Server      apiServerConfig
+	Database    databaseConfig
+	API         apiConfig
+	CertCacheDB databaseConfig
 }
 
 // serverConfig contains settings regarding the running server.
