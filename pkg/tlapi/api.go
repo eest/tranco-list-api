@@ -134,13 +134,17 @@ func muxWrapper(handler http.Handler, rl *rateLimit) http.HandlerFunc {
 		if r.Header.Get("Referer") == "" {
 			referer = "-"
 		} else {
-			referer = "\"" + r.Header.Get("Referer") + "\""
+			escapedReferer := strings.Replace(r.Header.Get("Referer"), "\n", "", -1)
+			escapedReferer = strings.Replace(escapedReferer, "\r", "", -1)
+			referer = "\"" + escapedReferer + "\""
 		}
 
 		if r.Header.Get("User-Agent") == "" {
 			ua = "-"
 		} else {
-			ua = "\"" + r.Header.Get("User-Agent") + "\""
+			escapedUA := strings.Replace(r.Header.Get("User-Agent"), "\n", "", -1)
+			escapedUA = strings.Replace(escapedUA, "\r", "", -1)
+			ua = "\"" + escapedUA + "\""
 		}
 
 		// Apache combined log format:
@@ -150,7 +154,7 @@ func muxWrapper(handler http.Handler, rl *rateLimit) http.HandlerFunc {
 			remoteHostIP,
 			time.Now().Format("02/Jan/2006:15:04:05 -0700"),
 			r.Method,
-			r.URL.Path,
+			r.URL.EscapedPath(),
 			r.Proto,
 			lrw.statusCode,
 			lrw.size,
