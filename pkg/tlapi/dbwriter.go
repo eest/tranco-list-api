@@ -390,7 +390,7 @@ func RunDBWriter() error {
 	}
 
 	// listen for signals so we can shut down nicely
-	sc := make(chan os.Signal)
+	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, os.Interrupt, syscall.SIGTERM)
 
 	// ce is used for reading errors from the updater loop
