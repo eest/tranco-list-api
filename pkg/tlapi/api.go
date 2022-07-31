@@ -147,6 +147,9 @@ func muxWrapper(handler http.Handler, rl *rateLimit) http.HandlerFunc {
 			ua = "\"" + escapedUA + "\""
 		}
 
+		escapedPath := strings.Replace(r.URL.EscapedPath(), "\n", "", -1)
+		escapedPath = strings.Replace(escapedPath, "\r", "", -1)
+
 		// Apache combined log format:
 		// LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\"" combined
 		serverLog.Printf(
@@ -154,7 +157,7 @@ func muxWrapper(handler http.Handler, rl *rateLimit) http.HandlerFunc {
 			remoteHostIP,
 			time.Now().Format("02/Jan/2006:15:04:05 -0700"),
 			r.Method,
-			r.URL.EscapedPath(),
+			escapedPath,
 			r.Proto,
 			lrw.statusCode,
 			lrw.size,
