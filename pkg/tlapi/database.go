@@ -187,34 +187,6 @@ func deleteListName(tx *sql.Tx, listName string) (int64, error) {
 	return id, nil
 }
 
-// getSiteID returns the DB id for a site
-func getSiteID(tx *sql.Tx, listID int64, rank int64, site string) (int64, error) {
-
-	var id int64
-	err := tx.QueryRow("SELECT id FROM sites WHERE list_id = $1 AND rank = $2 AND site = $3", listID, rank, site).Scan(&id)
-	switch {
-	case err == sql.ErrNoRows:
-		// Not an error, the site will be inserted
-		return id, nil
-	case err != nil:
-		return 0, fmt.Errorf("getSiteID: %s", err.Error())
-	}
-
-	return id, nil
-}
-
-// insertSite adds a site to the DB
-func insertSite(tx *sql.Tx, listID int64, rank int64, site string) (int64, error) {
-
-	var id int64
-	err := tx.QueryRow("INSERT INTO sites (list_id, rank, site) VALUES ($1, $2, $3) RETURNING id", listID, rank, site).Scan(&id)
-	if err != nil {
-		return 0, fmt.Errorf("insertSite: %s failed: %s", site, err.Error())
-	}
-
-	return id, nil
-}
-
 // latestListID returns the DB id and name of the most recently added list
 func latestListID(tx *sql.Tx) (int64, string, time.Time, error) {
 
