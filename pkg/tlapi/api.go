@@ -585,10 +585,8 @@ func RunAPIService() error {
 	}
 
 	if config.API.Path != "/" {
-		if strings.HasSuffix(config.API.Path, "/") {
-			// Strip a trailing "/" to make later offset calculations easier
-			config.API.Path = strings.TrimSuffix(config.API.Path, "/")
-		}
+		// Strip a trailing "/" to make later offset calculations easier
+		config.API.Path = strings.TrimSuffix(config.API.Path, "/")
 	}
 
 	// When API Path is "/" we need to exclude it in comparisons and
