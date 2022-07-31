@@ -321,6 +321,9 @@ func runUpdater(ud updaterData) {
 
 		// Get a random number of seconds between JitterMin and JitterMax (inclusive).
 		jitter := time.Duration(
+			/* #nosec G404 -- using weak random number generator is
+			   fine here since it is only jitter, and we seed it at startup so there should
+			   not be collisions between multiple instances of the app. */
 			ud.config.Updater.JitterMin+rand.Intn(
 				ud.config.Updater.JitterMax-ud.config.Updater.JitterMin+1,
 			),
