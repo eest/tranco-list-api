@@ -665,10 +665,11 @@ func RunAPIService() error {
 	}
 
 	srv := http.Server{
-		Handler:      muxWrapper(mux, rl),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  10 * time.Second,
+		Handler:           muxWrapper(mux, rl),
+		ReadTimeout:       10 * time.Second,
+		ReadHeaderTimeout: 10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       10 * time.Second,
 	}
 
 	if *prodFlag {
