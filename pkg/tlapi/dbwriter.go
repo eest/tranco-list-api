@@ -215,7 +215,12 @@ func updateDatabase(tx *sql.Tx, hc *http.Client, ulID string) error {
 	if err != nil {
 		return err
 	}
-	defer tmpfile.Close()
+	defer func() {
+		if err := tmpfile.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
 	defer os.Remove(tmpfile.Name()) // clean up
 
 	fetchStart := time.Now()
