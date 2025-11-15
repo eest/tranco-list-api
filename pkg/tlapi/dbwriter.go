@@ -9,7 +9,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
@@ -179,7 +178,7 @@ func upstreamListID(hc *http.Client) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -209,7 +208,7 @@ func listCleanup(tx *sql.Tx) error {
 // updateDatabase is the function doing all work related to fetching a new list
 // and loading it into the database
 func updateDatabase(tx *sql.Tx, hc *http.Client, ulID string) error {
-	tmpfile, err := ioutil.TempFile("", fmt.Sprintf("tranco-list_%s_*.zip", ulID))
+	tmpfile, err := os.CreateTemp("", fmt.Sprintf("tranco-list_%s_*.zip", ulID))
 	if err != nil {
 		return err
 	}
