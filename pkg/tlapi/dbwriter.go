@@ -3,9 +3,7 @@ package tlapi
 import (
 	"archive/zip"
 	"bufio"
-	crand "crypto/rand"
 	"database/sql"
-	"encoding/binary"
 	"flag"
 	"fmt"
 	"io"
@@ -337,20 +335,6 @@ func runUpdater(ud updaterData) {
 	}
 }
 
-// getRandomSeed returns a seed based on cryptographically secure pseudorandom numbers
-func getRandomSeed() (int64, error) {
-	// Mix of https://godoc.org/crypto/rand and
-	// https://stackoverflow.com/questions/12321133/golang-random-number-generator-how-to-seed-properly
-	c := 10
-	b := make([]byte, c)
-	_, err := crand.Read(b)
-	if err != nil {
-		return 0, err
-	}
-
-	return int64(binary.LittleEndian.Uint64(b)), nil
-}
-
 // RunDBWriter is the main entrypoint into running the database writer.
 // It should be called from main() in your program.
 func RunDBWriter() error {
@@ -362,14 +346,6 @@ func RunDBWriter() error {
 
 	// Fetch configuration settings.
 	config := readDBWriterConfig(configFile)
-
-	// Seed the PRNG with some unknown data to be able to add some random
-	// jitter to the sleep duration in the main loop.
-	seed, err := getRandomSeed()
-	if err != nil {
-		return err
-	}
-	rand.Seed(seed)
 
 	interval, err := time.ParseDuration(config.Updater.Interval)
 	if err != nil {
