@@ -45,6 +45,7 @@ func TestAPIHandlerSites(t *testing.T) {
 	mock.ExpectQuery("^SELECT id, name, ts FROM lists ORDER BY ts DESC LIMIT 1$").WillReturnRows(listRows)
 	mock.ExpectQuery("^SELECT rank, site FROM sites WHERE list_id = \\$1 AND rank >= \\$2 ORDER BY rank ASC LIMIT \\$3$").WithArgs(1, 1, 10).WillReturnRows(siteRows)
 	mock.ExpectRollback()
+	mock.ExpectClose()
 
 	config := newAPIServiceConfig()
 
@@ -115,6 +116,7 @@ func TestAPIHandlerSitesWithQueryParams(t *testing.T) {
 	mock.ExpectQuery("^SELECT id, name, ts FROM lists ORDER BY ts DESC LIMIT 1$").WillReturnRows(listRows)
 	mock.ExpectQuery("^SELECT rank, site FROM sites WHERE list_id = \\$1 AND rank >= \\$2 ORDER BY rank ASC LIMIT \\$3$").WithArgs(1, 10, 2).WillReturnRows(siteRows)
 	mock.ExpectRollback()
+	mock.ExpectClose()
 
 	config := newAPIServiceConfig()
 
@@ -190,6 +192,7 @@ func TestAPIHandlerSite(t *testing.T) {
 	mock.ExpectQuery("^SELECT id, name, ts FROM lists ORDER BY ts DESC LIMIT 1$").WillReturnRows(listRows)
 	mock.ExpectQuery("^SELECT rank FROM sites WHERE list_id = \\$1 AND site = \\$2$").WithArgs(1, "google.com").WillReturnRows(rankRow)
 	mock.ExpectRollback()
+	mock.ExpectClose()
 
 	config := newAPIServiceConfig()
 
@@ -259,6 +262,7 @@ func TestAPIHandlerRank(t *testing.T) {
 	mock.ExpectQuery("^SELECT id, name, ts FROM lists ORDER BY ts DESC LIMIT 1$").WillReturnRows(listRows)
 	mock.ExpectQuery("^SELECT site FROM sites WHERE list_id = \\$1 AND rank = \\$2$").WithArgs(1, 1).WillReturnRows(siteRow)
 	mock.ExpectRollback()
+	mock.ExpectClose()
 
 	config := newAPIServiceConfig()
 
