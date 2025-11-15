@@ -64,7 +64,12 @@ func fetchFile(hc *http.Client, ulID string, tmpfile *os.File) (time.Time, error
 	if err != nil {
 		return time.Time{}, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.Printf("fetchFile: resp.Body.Close() failed: %s", err)
+		}
+	}()
 
 	// https://tranco-list.eu/: the Last-Modified header provides an exact
 	// timestamp
@@ -117,7 +122,12 @@ func loadZip(ulID string, tmpfile *os.File, tx *sql.Tx, t time.Time) error {
 		if err != nil {
 			return err
 		}
-		defer rc.Close() // #nosec
+		defer func() {
+			err := rc.Close()
+			if err != nil {
+				log.Printf("loadZip: rc.Close() failed: %s", err)
+			}
+		}()
 
 		scanner := bufio.NewScanner(rc)
 
@@ -174,7 +184,12 @@ func upstreamListID(hc *http.Client) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			log.Printf("upstreamListID: resp.Body.Close() failed: %s", err)
+		}
+	}()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -216,7 +231,12 @@ func updateDatabase(tx *sql.Tx, hc *http.Client, ulID string) error {
 		}
 	}()
 
-	defer os.Remove(tmpfile.Name()) // clean up
+	defer func() {
+		err := os.Remove(tmpfile.Name()) // clean up
+		if err != nil {
+			log.Printf("updateDatabase: os.Remove() of '%s' failed: %s", tmpfile.Name(), err)
+		}
+	}()
 
 	fetchStart := time.Now()
 	t, err := fetchFile(hc, ulID, tmpfile)

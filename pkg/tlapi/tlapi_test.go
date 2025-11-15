@@ -14,7 +14,12 @@ func TestAPIHandlerSites(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			t.Errorf("TestAPIHandlerSItes: db.Close() failed: %s", err)
+		}
+	}()
 
 	ts, err := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 	if err != nil {
@@ -87,7 +92,12 @@ func TestAPIHandlerSitesWithQueryParams(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			t.Errorf("TestAPIHandlerSitesWithoutQUeryParams: db.Close() failed: %s", err)
+		}
+	}()
 
 	ts, err := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 	if err != nil {
@@ -158,7 +168,12 @@ func TestAPIHandlerSite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			t.Errorf("TestAPIHandlerSite: db.Close() failed: %s", err)
+		}
+	}()
 
 	ts, err := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 	if err != nil {
@@ -222,7 +237,12 @@ func TestAPIHandlerRank(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			t.Errorf("TestAPIHandlerRank: db.Close() failed: %s", err)
+		}
+	}()
 
 	ts, err := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 	if err != nil {

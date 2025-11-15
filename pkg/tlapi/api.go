@@ -134,21 +134,21 @@ func muxWrapper(handler http.Handler, rl *rateLimit) http.HandlerFunc {
 		if r.Header.Get("Referer") == "" {
 			referer = "-"
 		} else {
-			escapedReferer := strings.Replace(r.Header.Get("Referer"), "\n", "", -1)
-			escapedReferer = strings.Replace(escapedReferer, "\r", "", -1)
+			escapedReferer := strings.ReplaceAll(r.Header.Get("Referer"), "\n", "")
+			escapedReferer = strings.ReplaceAll(escapedReferer, "\r", "")
 			referer = "\"" + escapedReferer + "\""
 		}
 
 		if r.Header.Get("User-Agent") == "" {
 			ua = "-"
 		} else {
-			escapedUA := strings.Replace(r.Header.Get("User-Agent"), "\n", "", -1)
-			escapedUA = strings.Replace(escapedUA, "\r", "", -1)
+			escapedUA := strings.ReplaceAll(r.Header.Get("User-Agent"), "\n", "")
+			escapedUA = strings.ReplaceAll(escapedUA, "\r", "")
 			ua = "\"" + escapedUA + "\""
 		}
 
-		escapedPath := strings.Replace(r.URL.EscapedPath(), "\n", "", -1)
-		escapedPath = strings.Replace(escapedPath, "\r", "", -1)
+		escapedPath := strings.ReplaceAll(r.URL.EscapedPath(), "\n", "")
+		escapedPath = strings.ReplaceAll(escapedPath, "\r", "")
 
 		// Apache combined log format:
 		// LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\"" combined
@@ -701,7 +701,10 @@ func RunAPIService() error {
 
 	// Add runtime route to the stats listener
 	http.HandleFunc("/runtime", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "%s\n", runtime.Version())
+		_, err := fmt.Fprintf(w, "%s\n", runtime.Version())
+		if err != nil {
+			log.Printf("error when responding to /runtime: %s", err)
+		}
 	})
 
 	// Start stats listener where expvar will make /debug/vars available
@@ -713,7 +716,12 @@ func RunAPIService() error {
 			MaxHeaderBytes: 1 << 20,
 		}
 
-		go statsServer.ListenAndServe()
+		go func() {
+			err := statsServer.ListenAndServe()
+			if err != nil {
+				log.Printf("stats server ListenAndServe failed: %s\n", err)
+			}
+		}()
 	}
 
 	if *prodFlag {

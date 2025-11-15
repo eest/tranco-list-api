@@ -94,7 +94,10 @@ func openTx(db *sql.DB) (*sql.Tx, error) {
 
 	err = initDB(tx)
 	if err != nil {
-		tx.Rollback() // #nosec
+		rbErr := tx.Rollback()
+		if rbErr != nil {
+			log.Printf("openTx rollback failed: %s", err)
+		}
 		return nil, err
 	}
 
@@ -137,7 +140,12 @@ func getOldLists(tx *sql.Tx, keep int) ([]string, error) {
 	if err != nil {
 		return []string{}, fmt.Errorf("getOldLists SELECT failed: %s", err)
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Printf("getOldLists: rows.Close() failed: %s", err)
+		}
+	}()
 
 	for rows.Next() {
 		err = rows.Scan(&name)
@@ -204,7 +212,12 @@ func getListSites(tx *sql.Tx, listID, start, count int64) ([]siteEntry, error) {
 	if err != nil {
 		return []siteEntry{}, fmt.Errorf("getListSites SELECT failed: %s", err)
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Printf("getListSites: rows.Close() failed: %s", err)
+		}
+	}()
 
 	sites := []siteEntry{}
 	for rows.Next() {
