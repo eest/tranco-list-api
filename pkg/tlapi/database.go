@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"log"
 	"time"
-
-	"github.com/lib/pq"
 )
 
 // openDB creates the DB connection.
@@ -58,28 +56,6 @@ func initDB(tx *sql.Tx) error {
 	)
 	if err != nil {
 		return fmt.Errorf("create sites: %s", err)
-	}
-
-	return nil
-}
-
-// vacuumAnalyze runs every time we have updated the database with a new list
-func vacuumAnalyze(db *sql.DB, table string) error {
-	// https://www.postgresql.org/docs/current/sql-vacuum.html:
-	//
-	// After adding or deleting a large number of rows, it might be a good
-	// idea to issue a VACUUM ANALYZE command for the affected table. This
-	// will update the system catalogs with the results of all recent
-	// changes, and allow the PostgreSQL query planner to make better
-	// choices in planning queries.
-
-	// QuoteIdentifier quotes an "identifier" (e.g. a table or a column
-	// name) to be used as part of an SQL statement.
-	quotedTable := pq.QuoteIdentifier(table)
-
-	_, err := db.Exec(fmt.Sprintf("VACUUM ANALYZE %s", quotedTable))
-	if err != nil {
-		return fmt.Errorf("vacuumAnalyze %s: %s", quotedTable, err)
 	}
 
 	return nil
