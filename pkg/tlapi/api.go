@@ -706,16 +706,28 @@ func RunAPIService() error {
 
 	// Start stats listener where expvar will make /debug/vars available
 	if *statsFlag {
-		go http.ListenAndServe(fmt.Sprintf("%s:%d", config.Server.StatsAddress, config.Server.StatsPort), nil)
+		statsServer := &http.Server{
+			Addr:           fmt.Sprintf("%s:%d", config.Server.StatsAddress, config.Server.StatsPort),
+			ReadTimeout:    10 * time.Second,
+			WriteTimeout:   10 * time.Second,
+			MaxHeaderBytes: 1 << 20,
+		}
+
+		go statsServer.ListenAndServe()
 	}
 
 	if *prodFlag {
 		// Enable Let's Encrypt http-01 listener
 		go func() {
-			err := http.ListenAndServe(
-				fmt.Sprintf(":%d", config.Server.HTTPChallengePort),
-				acm.HTTPHandler(nil),
-			)
+			acmeServer := &http.Server{
+				Addr:           fmt.Sprintf(":%d", config.Server.HTTPChallengePort),
+				Handler:        acm.HTTPHandler(nil),
+				ReadTimeout:    10 * time.Second,
+				WriteTimeout:   10 * time.Second,
+				MaxHeaderBytes: 1 << 20,
+			}
+
+			err := acmeServer.ListenAndServe()
 			if err != nil {
 				log.Printf("error opening autocert http-01 listener: %s", err)
 			}
