@@ -2,9 +2,10 @@ package tlapi
 
 import (
 	"database/sql"
-	"golang.org/x/time/rate"
 	"net/http"
 	"time"
+
+	"golang.org/x/time/rate"
 )
 
 // apiServiceConfig holds information read from the config file used by the API service.

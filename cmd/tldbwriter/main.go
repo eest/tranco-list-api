@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/eest/tranco-list-api/pkg/tlapi"
 	"log"
+
+	"github.com/eest/tranco-list-api/pkg/tlapi"
 )
 
 func main() {

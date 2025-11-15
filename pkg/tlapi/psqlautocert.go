@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"golang.org/x/crypto/acme/autocert"
 	"log"
 	"time"
+
+	"golang.org/x/crypto/acme/autocert"
 )
 
 type psqlCertCache struct {
@@ -73,7 +74,6 @@ func (pcc *psqlCertCache) Get(ctx context.Context, key string) ([]byte, error) {
 }
 
 func (pcc *psqlCertCache) Put(ctx context.Context, key string, data []byte) error {
-
 	log.Printf("putting certcache key %s", key)
 
 	result, err := pcc.db.ExecContext(ctx, "INSERT INTO certcache (ts, key, data) VALUES ($1, $2, $3)", time.Now(), key, data)
@@ -94,7 +94,6 @@ func (pcc *psqlCertCache) Put(ctx context.Context, key string, data []byte) erro
 }
 
 func (pcc *psqlCertCache) Delete(ctx context.Context, key string) error {
-
 	log.Printf("deleting certcache key %s", key)
 
 	result, err := pcc.db.ExecContext(ctx, "DELETE FROM certcache WHERE key = $1", key)

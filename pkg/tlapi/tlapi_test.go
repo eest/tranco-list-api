@@ -1,15 +1,15 @@
 package tlapi
 
 import (
-	"github.com/DATA-DOG/go-sqlmock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/DATA-DOG/go-sqlmock"
 )
 
 func TestAPIHandlerSites(t *testing.T) {
-
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -83,7 +83,6 @@ func TestAPIHandlerSites(t *testing.T) {
 }
 
 func TestAPIHandlerSitesWithQueryParams(t *testing.T) {
-
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -155,7 +154,6 @@ func TestAPIHandlerSitesWithQueryParams(t *testing.T) {
 }
 
 func TestAPIHandlerSite(t *testing.T) {
-
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -220,7 +218,6 @@ func TestAPIHandlerSite(t *testing.T) {
 }
 
 func TestAPIHandlerRank(t *testing.T) {
-
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)

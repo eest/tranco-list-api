@@ -8,8 +8,6 @@ import (
 	"encoding/binary"
 	"flag"
 	"fmt"
-	"github.com/BurntSushi/toml"
-	"github.com/lib/pq"
 	"io"
 	"io/ioutil"
 	"log"
@@ -23,6 +21,9 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/BurntSushi/toml"
+	"github.com/lib/pq"
 )
 
 // readDBWriterConfig parses the supplied configuration file or falls back to
@@ -60,7 +61,6 @@ func newDBWriterConfig() *dbWriterConfig {
 
 // fetchFile attempts to download the zip file containing the top list
 func fetchFile(hc *http.Client, ulID string, tmpfile *os.File) (time.Time, error) {
-
 	log.Printf("downloading %s to %s", ulID, tmpfile.Name())
 
 	resp, err := hc.Get(fmt.Sprintf("https://tranco-list.eu/download_daily/%s", ulID))
@@ -89,7 +89,6 @@ func fetchFile(hc *http.Client, ulID string, tmpfile *os.File) (time.Time, error
 
 // loadZip reads the downloaded zip file and inserts the contents into the DB
 func loadZip(ulID string, tmpfile *os.File, tx *sql.Tx, t time.Time) error {
-
 	// Open a zip archive for reading.
 	tfStat, err := tmpfile.Stat()
 	if err != nil {
@@ -191,7 +190,6 @@ func upstreamListID(hc *http.Client) (string, error) {
 // listCleanup makes sure we remove old lists from the database after a new one
 // has been added to not create an ever increasing storage footprint
 func listCleanup(tx *sql.Tx) error {
-
 	// How many lists to keep
 	numKeep := 1
 
@@ -342,7 +340,6 @@ func runUpdater(ud updaterData) {
 
 // getRandomSeed returns a seed based on cryptographically secure pseudorandom numbers
 func getRandomSeed() (int64, error) {
-
 	// Mix of https://godoc.org/crypto/rand and
 	// https://stackoverflow.com/questions/12321133/golang-random-number-generator-how-to-seed-properly
 	c := 10
@@ -353,7 +350,6 @@ func getRandomSeed() (int64, error) {
 	}
 
 	return int64(binary.LittleEndian.Uint64(b)), nil
-
 }
 
 // RunDBWriter is the main entrypoint into running the database writer.

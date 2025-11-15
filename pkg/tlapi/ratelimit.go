@@ -1,10 +1,11 @@
 package tlapi
 
 import (
-	"golang.org/x/time/rate"
 	"log"
 	"sync"
 	"time"
+
+	"golang.org/x/time/rate"
 )
 
 // limitData contains information for a specific IP address.

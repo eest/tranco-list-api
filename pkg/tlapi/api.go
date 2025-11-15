@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/BurntSushi/toml"
-	"golang.org/x/crypto/acme/autocert"
 	"log"
 	"net"
 	"net/http"
@@ -18,6 +16,9 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/BurntSushi/toml"
+	"golang.org/x/crypto/acme/autocert"
 )
 
 // readAPIServiceConfig parses the supplied configuration file or falls back to
@@ -105,7 +106,6 @@ func muxWrapper(handler http.Handler, rl *rateLimit) http.HandlerFunc {
 	serverLog := log.New(os.Stderr, "", 0)
 
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		passToHandler := true
 		lrw := &loggingResponseWriter{ResponseWriter: w, statusCode: http.StatusOK}
 
@@ -164,7 +164,6 @@ func muxWrapper(handler http.Handler, rl *rateLimit) http.HandlerFunc {
 			referer,
 			ua,
 		)
-
 	}
 }
 
@@ -179,7 +178,6 @@ func badRequestHint(w http.ResponseWriter, basePath string) {
 // tlAPIHandler is the main workhorse of the API, it deals with all requests
 // sent to API endpoint.
 func tlAPIHandler(r *request) {
-
 	start := r.config.API.DefaultStart
 	count := r.config.API.DefaultCount
 
@@ -437,7 +435,6 @@ func tlAPIHandler(r *request) {
 
 // sitesPayload builds a JSON payload returned when handling a "sites" request
 func sitesPayload(db *sql.DB, start, count int64, timeLoc *time.Location, config *apiServiceConfig) (apiResponse, error) {
-
 	tx, err := repeatableReadTransaction(db)
 	if err != nil {
 		return apiResponse{}, err
@@ -473,12 +470,10 @@ func sitesPayload(db *sql.DB, start, count int64, timeLoc *time.Location, config
 		Reference:    fmt.Sprintf("%s/%s", config.API.ReferenceBaseURL, name),
 		Sites:        sites,
 	}, nil
-
 }
 
 // siteWithRankPayload builds the payload returned when requesting a specific rank
 func siteWithRankPayload(db *sql.DB, rank int64, timeLoc *time.Location, config *apiServiceConfig) (apiResponse, error) {
-
 	tx, err := repeatableReadTransaction(db)
 	if err != nil {
 		return apiResponse{}, err
@@ -514,12 +509,10 @@ func siteWithRankPayload(db *sql.DB, rank int64, timeLoc *time.Location, config 
 		Reference:    fmt.Sprintf("%s/%s", config.API.ReferenceBaseURL, name),
 		Sites:        sites,
 	}, nil
-
 }
 
 // siteWithNamePayload builds the payload returned when requesting a specific name
 func siteWithNamePayload(db *sql.DB, site string, timeLoc *time.Location, config *apiServiceConfig) (apiResponse, error) {
-
 	tx, err := repeatableReadTransaction(db)
 	if err != nil {
 		return apiResponse{}, err
@@ -555,7 +548,6 @@ func siteWithNamePayload(db *sql.DB, site string, timeLoc *time.Location, config
 		Reference:    fmt.Sprintf("%s/%s", config.API.ReferenceBaseURL, name),
 		Sites:        sites,
 	}, nil
-
 }
 
 // RunAPIService is the entrypoint into starting the API service listening for HTTP requests.

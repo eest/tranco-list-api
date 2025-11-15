@@ -2,9 +2,10 @@ package main
 
 import (
 	_ "expvar"
+	"log"
+
 	"github.com/eest/tranco-list-api/pkg/tlapi"
 	_ "github.com/lib/pq"
-	"log"
 )
 
 func main() {

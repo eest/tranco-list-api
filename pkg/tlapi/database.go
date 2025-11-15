@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/lib/pq"
 	"log"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 // openDB creates the DB connection.
@@ -64,7 +65,6 @@ func initDB(tx *sql.Tx) error {
 
 // vacuumAnalyze runs every time we have updated the database with a new list
 func vacuumAnalyze(db *sql.DB, table string) error {
-
 	// https://www.postgresql.org/docs/current/sql-vacuum.html:
 	//
 	// After adding or deleting a large number of rows, it might be a good
@@ -87,7 +87,6 @@ func vacuumAnalyze(db *sql.DB, table string) error {
 
 // openTx creates a transaction for later use and makes sure the database is initialized
 func openTx(db *sql.DB) (*sql.Tx, error) {
-
 	tx, err := db.Begin()
 	if err != nil {
 		return nil, err
@@ -104,7 +103,6 @@ func openTx(db *sql.DB) (*sql.Tx, error) {
 
 // getListID fetches the DB id given the name of the list
 func getListID(tx *sql.Tx, listName string) (int64, error) {
-
 	var id int64
 	err := tx.QueryRow("SELECT id FROM lists WHERE name = $1", listName).Scan(&id)
 	switch {
@@ -120,7 +118,6 @@ func getListID(tx *sql.Tx, listName string) (int64, error) {
 
 // insertList adds a list to the database and returns the newly created DB id
 func insertList(tx *sql.Tx, listName string, t time.Time) (int64, error) {
-
 	var id int64
 	err := tx.QueryRow("INSERT INTO lists (name, ts) VALUES ($1, $2) RETURNING id", listName, t).Scan(&id)
 	if err != nil {
@@ -133,7 +130,6 @@ func insertList(tx *sql.Tx, listName string, t time.Time) (int64, error) {
 // getOldLists returns a list of listnames that can be removed given the
 // number of lists to keep.
 func getOldLists(tx *sql.Tx, keep int) ([]string, error) {
-
 	var name string
 	var names []string
 
@@ -163,7 +159,6 @@ func getOldLists(tx *sql.Tx, keep int) ([]string, error) {
 
 // deleteListNames removes the supplied list of names from the DB
 func deleteListNames(tx *sql.Tx, listNames []string) error {
-
 	for _, listName := range listNames {
 		log.Printf("deleting list with name %s", listName)
 		_, err := deleteListName(tx, listName)
@@ -177,7 +172,6 @@ func deleteListNames(tx *sql.Tx, listNames []string) error {
 
 // deleteListName removes the given list name from the DB
 func deleteListName(tx *sql.Tx, listName string) (int64, error) {
-
 	var id int64
 	err := tx.QueryRow("DELETE FROM lists WHERE name = $1 RETURNING id", listName).Scan(&id)
 	if err != nil {
@@ -189,7 +183,6 @@ func deleteListName(tx *sql.Tx, listName string) (int64, error) {
 
 // latestListID returns the DB id and name of the most recently added list
 func latestListID(tx *sql.Tx) (int64, string, time.Time, error) {
-
 	var id int64
 	var name string
 	var t time.Time
@@ -204,7 +197,6 @@ func latestListID(tx *sql.Tx) (int64, string, time.Time, error) {
 // getListSites return all site entries related to the given list limited by
 // the start and count boundaries from the DB
 func getListSites(tx *sql.Tx, listID, start, count int64) ([]siteEntry, error) {
-
 	var rank int64
 	var site string
 
@@ -229,7 +221,6 @@ func getListSites(tx *sql.Tx, listID, start, count int64) ([]siteEntry, error) {
 
 // getListSiteRank fetches the site matching the given rank on the specified list from the DB
 func getListSiteRank(tx *sql.Tx, listID, rank int64) ([]siteEntry, error) {
-
 	var site string
 
 	err := tx.QueryRow(`SELECT site FROM sites WHERE list_id = $1 AND rank = $2`, listID, rank).Scan(&site)
@@ -237,12 +228,11 @@ func getListSiteRank(tx *sql.Tx, listID, rank int64) ([]siteEntry, error) {
 		return []siteEntry{}, fmt.Errorf("getListSiteRank SELECT failed: %s", err)
 	}
 
-	return []siteEntry{siteEntry{Rank: rank, Site: site}}, nil
+	return []siteEntry{{Rank: rank, Site: site}}, nil
 }
 
 // getListSiteName fetches the site matching the given name on the specified list from the DB
 func getListSiteName(tx *sql.Tx, listID int64, site string) ([]siteEntry, error) {
-
 	var rank int64
 
 	err := tx.QueryRow(`SELECT rank FROM sites WHERE list_id = $1 AND site = $2`, listID, site).Scan(&rank)
@@ -254,7 +244,7 @@ func getListSiteName(tx *sql.Tx, listID int64, site string) ([]siteEntry, error)
 		return []siteEntry{}, fmt.Errorf("getListSiteName SELECT failed: %s", err)
 	}
 
-	return []siteEntry{siteEntry{Rank: rank, Site: site}}, nil
+	return []siteEntry{{Rank: rank, Site: site}}, nil
 }
 
 func repeatableReadTransaction(db *sql.DB) (*sql.Tx, error) {
@@ -284,7 +274,6 @@ func repeatableReadTransaction(db *sql.DB) (*sql.Tx, error) {
 			ReadOnly:  true,
 		},
 	)
-
 	if err != nil {
 		return nil, err
 	}
