@@ -118,6 +118,11 @@ func loadZip(ulID string, tmpfile *os.File, tx *sql.Tx, t time.Time) error {
 			return err
 		}
 
+		sitesTable, err := createSitesPartition(tx, listID)
+		if err != nil {
+			return fmt.Errorf("loadZip: createSitesPartition failed: %w", err)
+		}
+
 		rc, err := f.Open()
 		if err != nil {
 			return err
@@ -135,9 +140,9 @@ func loadZip(ulID string, tmpfile *os.File, tx *sql.Tx, t time.Time) error {
 		// use pq.CopyIn (which uses COPY FROM internally) instead of
 		// using INSERT.
 		// See https://godoc.org/github.com/lib/pq#hdr-Bulk_imports
-		stmt, err := tx.Prepare(pq.CopyIn("sites", "list_id", "rank", "site"))
+		stmt, err := tx.Prepare(pq.CopyIn(sitesTable, "list_id", "rank", "site"))
 		if err != nil {
-			return err
+			return fmt.Errorf("loadZip: unable to prepare statement: %w", err)
 		}
 		for scanner.Scan() {
 			parts := strings.Split(scanner.Text(), ",")
@@ -163,15 +168,15 @@ func loadZip(ulID string, tmpfile *os.File, tx *sql.Tx, t time.Time) error {
 		//  once with no arguments to flush all buffered data.
 		_, err = stmt.Exec()
 		if err != nil {
-			return err
+			return fmt.Errorf("loadZip: stmt.Exec() failed: %w", err)
 		}
 
 		err = stmt.Close()
 		if err != nil {
-			return err
+			return fmt.Errorf("loadZip: stmt.Close() failed: %w", err)
 		}
 		if err := scanner.Err(); err != nil {
-			return err
+			return fmt.Errorf("loadZip: scanner.Err() failed: %w", err)
 		}
 	}
 
@@ -207,12 +212,12 @@ func listCleanup(tx *sql.Tx) error {
 
 	listNames, err := getOldLists(tx, numKeep)
 	if err != nil {
-		return err
+		return fmt.Errorf("listCleanup: getOldLists failed: %w", err)
 	}
 
 	err = deleteListNames(tx, listNames)
 	if err != nil {
-		return err
+		return fmt.Errorf("listCleanup: deleteListNames failed: %w", err)
 	}
 
 	return nil
@@ -377,6 +382,21 @@ func RunDBWriter() error {
 	db, err := openDB(connStr)
 	if err != nil {
 		return err
+	}
+
+	// Check if we are using an old non-partitioned version of the sites table
+	var relKind string
+	err = db.QueryRow("SELECT relkind FROM pg_class WHERE relname = $1", "sites").Scan(&relKind)
+	if err != nil {
+		// No rows is OK, a fresh table will be created
+		if err != sql.ErrNoRows {
+			return fmt.Errorf("RunDBWriter: relkind check failed: %w", err)
+		}
+	}
+
+	// r = ordinary table
+	if relKind == "r" {
+		return fmt.Errorf("RunDBWriter: 'sites' table is not partitioned, please reset via DROP TABLE on 'sites' and 'lists' to start over")
 	}
 
 	// listen for signals so we can shut down nicely

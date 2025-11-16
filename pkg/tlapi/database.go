@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 // openDB creates the DB connection.
@@ -31,9 +33,7 @@ func pingDB(db *sql.DB) error {
 // initDB runs every time we attempt to update the database to makes sure the
 // tables are available.
 func initDB(tx *sql.Tx) error {
-	var err error
-
-	_, err = tx.Exec(
+	_, err := tx.Exec(
 		`CREATE TABLE IF NOT EXISTS lists (
                     id BIGSERIAL PRIMARY KEY,
                     name text UNIQUE NOT NULL,
@@ -41,21 +41,68 @@ func initDB(tx *sql.Tx) error {
                 )`,
 	)
 	if err != nil {
-		return fmt.Errorf("create lists: %s", err)
+		return fmt.Errorf("create lists failed: %s", err)
+	}
+
+	_, err = tx.Exec(
+		`GRANT SELECT on lists to trancolist_ro`,
+	)
+	if err != nil {
+		return fmt.Errorf("GRANT SELECT on sites failed: %s", err)
 	}
 
 	_, err = tx.Exec(
 		`CREATE TABLE IF NOT EXISTS sites (
-                id BIGSERIAL PRIMARY KEY,
                 list_id BIGINT NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
                 rank BIGINT NOT NULL,
                 site TEXT NOT NULL,
-                UNIQUE (list_id, rank),
-                UNIQUE (list_id, site)
-            )`,
+		PRIMARY KEY (list_id, site),
+                UNIQUE (list_id, rank)
+            ) PARTITION BY LIST (list_id)`,
 	)
 	if err != nil {
-		return fmt.Errorf("create sites: %s", err)
+		return fmt.Errorf("create sites failed: %s", err)
+	}
+
+	_, err = tx.Exec(
+		`GRANT SELECT on sites to trancolist_ro`,
+	)
+	if err != nil {
+		return fmt.Errorf("GRANT SELECT on sites failed: %s", err)
+	}
+
+	return nil
+}
+
+func sitesPartitionName(listID int64) string {
+	return fmt.Sprintf("sites_%d", listID)
+}
+
+func createSitesPartition(tx *sql.Tx, listID int64) (string, error) {
+	sitesTable := sitesPartitionName(listID)
+	quotedTable := pq.QuoteIdentifier(sitesTable)
+
+	log.Printf("creating sites partition %s", quotedTable)
+
+	_, err := tx.Exec(fmt.Sprintf(`
+		CREATE TABLE %s PARTITION OF sites FOR VALUES IN (%d)
+            `, quotedTable, listID))
+	if err != nil {
+		return "", fmt.Errorf("sites partition creation failed for %s: %s", quotedTable, err)
+	}
+
+	return sitesTable, nil
+}
+
+func dropSitesPartition(tx *sql.Tx, listID int64) error {
+	sitesTable := sitesPartitionName(listID)
+	quotedTable := pq.QuoteIdentifier(sitesTable)
+
+	_, err := tx.Exec(fmt.Sprintf(`
+		DROP TABLE %s
+            `, quotedTable))
+	if err != nil {
+		return fmt.Errorf("drop sites partition %s failed: %s", quotedTable, err)
 	}
 
 	return nil
@@ -145,7 +192,13 @@ func getOldLists(tx *sql.Tx, keep int) ([]string, error) {
 func deleteListNames(tx *sql.Tx, listNames []string) error {
 	for _, listName := range listNames {
 		log.Printf("deleting list with name %s", listName)
-		_, err := deleteListName(tx, listName)
+		listID, err := deleteListName(tx, listName)
+		if err != nil {
+			return err
+		}
+
+		log.Printf("deleting sites partition with list id %d", listID)
+		err = dropSitesPartition(tx, listID)
 		if err != nil {
 			return err
 		}
