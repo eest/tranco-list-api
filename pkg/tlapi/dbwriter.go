@@ -71,6 +71,10 @@ func fetchFile(hc *http.Client, ulID string, tmpfile *os.File) (time.Time, error
 		}
 	}()
 
+	if resp.StatusCode != http.StatusOK {
+		return time.Time{}, fmt.Errorf("unexpected HTTP status code when fetching top list: %d", resp.StatusCode)
+	}
+
 	// https://tranco-list.eu/: the Last-Modified header provides an exact
 	// timestamp
 	// Last-Modified: Wed, 28 Aug 2019 22:15:44 GMT
@@ -195,6 +199,10 @@ func upstreamListID(hc *http.Client) (string, error) {
 			log.Printf("upstreamListID: resp.Body.Close() failed: %s", err)
 		}
 	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("unexpected HTTP status code when fetching latest list id: %d", resp.StatusCode)
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
