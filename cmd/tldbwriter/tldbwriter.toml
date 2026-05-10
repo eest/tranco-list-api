@@ -13,3 +13,4 @@
 #interval = "1h"
 #jittermin = 0
 #jittermax = 300
+#dbtimeout = "10m"

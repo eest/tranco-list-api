@@ -3,6 +3,7 @@ package tlapi
 import (
 	"archive/zip"
 	"bufio"
+	"context"
 	"database/sql"
 	"flag"
 	"fmt"
@@ -52,6 +53,7 @@ func newDBWriterConfig() *dbWriterConfig {
 			Interval:  "1h",
 			JitterMin: 0,
 			JitterMax: 300,
+			DBTimeout: "10m",
 		},
 	}
 }
@@ -293,15 +295,18 @@ func updateDatabase(tx *sql.Tx, hc *http.Client, ulID string) error {
 
 // checkForUpdates checks the latest upstream list against content in the DB
 // and executes an update if necessary
-func checkForUpdates(db *sql.DB, hc *http.Client) error {
+func checkForUpdates(db *sql.DB, hc *http.Client, dbTimeout time.Duration) error {
 	log.Println("checking for updates")
 	ulID, err := upstreamListID(hc)
 	if err != nil {
 		return err
 	}
 
+	dbCtx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
 	log.Println("creating transaction")
-	tx, err := openTx(db)
+	tx, err := openTx(dbCtx, db)
 	if err != nil {
 		return err
 	}
@@ -333,7 +338,7 @@ func runUpdater(ud updaterData) {
 	var err error
 
 	for {
-		err = checkForUpdates(ud.db, ud.hc)
+		err = checkForUpdates(ud.db, ud.hc, ud.dbTimeout)
 		if err != nil {
 			if nerr, ok := err.(net.Error); ok && nerr.Timeout() {
 				log.Println(err)
@@ -372,6 +377,11 @@ func RunDBWriter() error {
 	config := readDBWriterConfig(configFile)
 
 	interval, err := time.ParseDuration(config.Updater.Interval)
+	if err != nil {
+		return err
+	}
+
+	dbTimeout, err := time.ParseDuration(config.Updater.DBTimeout)
 	if err != nil {
 		return err
 	}
@@ -422,11 +432,12 @@ func RunDBWriter() error {
 	}
 
 	ud := updaterData{
-		config:   config,
-		db:       db,
-		hc:       hc,
-		chanErr:  ce,
-		interval: interval,
+		config:    config,
+		db:        db,
+		hc:        hc,
+		chanErr:   ce,
+		interval:  interval,
+		dbTimeout: dbTimeout,
 	}
 
 	go runUpdater(ud)

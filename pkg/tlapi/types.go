@@ -99,11 +99,12 @@ type siteEntry struct {
 
 // updaterData holds information passed to the dbwriter updater loop.
 type updaterData struct {
-	config   *dbWriterConfig
-	db       *sql.DB
-	hc       *http.Client
-	chanErr  chan error
-	interval time.Duration
+	config    *dbWriterConfig
+	db        *sql.DB
+	hc        *http.Client
+	chanErr   chan error
+	interval  time.Duration
+	dbTimeout time.Duration
 }
 
 // dbWriterConfig holds information read from the dbwriter config file.
@@ -117,4 +118,5 @@ type updaterConfig struct {
 	Interval  string
 	JitterMin int
 	JitterMax int
+	DBTimeout string
 }

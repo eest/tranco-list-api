@@ -109,8 +109,8 @@ func dropSitesPartition(tx *sql.Tx, listID int64) error {
 }
 
 // openTx creates a transaction for later use and makes sure the database is initialized
-func openTx(db *sql.DB) (*sql.Tx, error) {
-	tx, err := db.Begin()
+func openTx(ctx context.Context, db *sql.DB) (*sql.Tx, error) {
+	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
