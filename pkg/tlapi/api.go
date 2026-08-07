@@ -85,14 +85,13 @@ func newAPIServiceConfig() *apiServiceConfig {
 //
 // The resulting call order:
 // muxWrapper -> ServeMux -> handlerWrapper -> tlAPIHandler
-func handlerWrapper(handler func(*request), db *sql.DB, config *apiServiceConfig, timeLoc *time.Location, basePath string) http.HandlerFunc {
+func handlerWrapper(handler func(*request), db *sql.DB, config *apiServiceConfig, basePath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		r := &request{
 			w:        w,
 			req:      req,
 			db:       db,
 			config:   config,
-			timeLoc:  timeLoc,
 			basePath: basePath,
 		}
 
@@ -273,7 +272,7 @@ func tlAPIHandler(r *request) {
 					return
 				}
 			}
-			ar, err := sitesPayload(r.db, start, count, r.timeLoc, r.config)
+			ar, err := sitesPayload(r.db, start, count, r.config)
 			if err != nil {
 				log.Printf("sitesPayload: %s", err)
 				http.Error(
@@ -360,7 +359,7 @@ func tlAPIHandler(r *request) {
 					return
 				}
 
-				ar, err := siteWithRankPayload(r.db, rank, r.timeLoc, r.config)
+				ar, err := siteWithRankPayload(r.db, rank, r.config)
 				if err != nil {
 					log.Printf("siteWithRankPayload: %s", err)
 					http.Error(
@@ -384,7 +383,7 @@ func tlAPIHandler(r *request) {
 				return
 			case "site":
 				site := urlParts[apiPartsLen+1]
-				ar, err := siteWithNamePayload(r.db, site, r.timeLoc, r.config)
+				ar, err := siteWithNamePayload(r.db, site, r.config)
 				if err != nil {
 					log.Printf("siteWithNamePayload: %s", err)
 					http.Error(
@@ -434,7 +433,7 @@ func tlAPIHandler(r *request) {
 }
 
 // sitesPayload builds a JSON payload returned when handling a "sites" request
-func sitesPayload(db *sql.DB, start, count int64, timeLoc *time.Location, config *apiServiceConfig) (apiResponse, error) {
+func sitesPayload(db *sql.DB, start, count int64, config *apiServiceConfig) (apiResponse, error) {
 	tx, err := repeatableReadTransaction(db)
 	if err != nil {
 		return apiResponse{}, err
@@ -466,14 +465,14 @@ func sitesPayload(db *sql.DB, start, count int64, timeLoc *time.Location, config
 
 	return apiResponse{
 		List:         name,
-		LastModified: ts.In(timeLoc).Format(time.RFC1123), // Format matches Last-Modified header for zip file
+		LastModified: ts.UTC().Format(http.TimeFormat), // Format matches Last-Modified header for zip file
 		Reference:    fmt.Sprintf("%s/%s", config.API.ReferenceBaseURL, name),
 		Sites:        sites,
 	}, nil
 }
 
 // siteWithRankPayload builds the payload returned when requesting a specific rank
-func siteWithRankPayload(db *sql.DB, rank int64, timeLoc *time.Location, config *apiServiceConfig) (apiResponse, error) {
+func siteWithRankPayload(db *sql.DB, rank int64, config *apiServiceConfig) (apiResponse, error) {
 	tx, err := repeatableReadTransaction(db)
 	if err != nil {
 		return apiResponse{}, err
@@ -505,14 +504,14 @@ func siteWithRankPayload(db *sql.DB, rank int64, timeLoc *time.Location, config 
 
 	return apiResponse{
 		List:         name,
-		LastModified: ts.In(timeLoc).Format(time.RFC1123), // Format matches Last-Modified header for zip file
+		LastModified: ts.UTC().Format(http.TimeFormat), // Format matches Last-Modified header for zip file
 		Reference:    fmt.Sprintf("%s/%s", config.API.ReferenceBaseURL, name),
 		Sites:        sites,
 	}, nil
 }
 
 // siteWithNamePayload builds the payload returned when requesting a specific name
-func siteWithNamePayload(db *sql.DB, site string, timeLoc *time.Location, config *apiServiceConfig) (apiResponse, error) {
+func siteWithNamePayload(db *sql.DB, site string, config *apiServiceConfig) (apiResponse, error) {
 	tx, err := repeatableReadTransaction(db)
 	if err != nil {
 		return apiResponse{}, err
@@ -544,7 +543,7 @@ func siteWithNamePayload(db *sql.DB, site string, timeLoc *time.Location, config
 
 	return apiResponse{
 		List:         name,
-		LastModified: ts.In(timeLoc).Format(time.RFC1123), // Format matches Last-Modified header for zip file
+		LastModified: ts.UTC().Format(http.TimeFormat), // Format matches Last-Modified header for zip file
 		Reference:    fmt.Sprintf("%s/%s", config.API.ReferenceBaseURL, name),
 		Sites:        sites,
 	}, nil
@@ -559,13 +558,6 @@ func RunAPIService() error {
 	eccFlag := flag.Bool("ecc", false, "enable external cache for Let's Encrypt cert data")
 	statsFlag := flag.Bool("stats", false, "enable stats listener where expvar data is available")
 	flag.Parse()
-
-	// Make sure the returned last-modified field is in GMT time to match
-	// Last-Modified header when downloading zip file.
-	timeLoc, err := time.LoadLocation("GMT")
-	if err != nil {
-		return err
-	}
 
 	// Fetch configuration settings.
 	config := readAPIServiceConfig(configFile)
@@ -615,12 +607,12 @@ func RunAPIService() error {
 	// the publicly exposed service
 	mux := http.NewServeMux()
 
-	mux.HandleFunc(config.API.Path, handlerWrapper(tlAPIHandler, db, config, timeLoc, basePath))
+	mux.HandleFunc(config.API.Path, handlerWrapper(tlAPIHandler, db, config, basePath))
 	if config.API.Path != "/" {
 		// Make it so we handle requests both with and without a trailing "/"
 		// on the API path, since we want to match requests for
 		// subtrees like /rank and /site as well as the plain API path.
-		mux.HandleFunc(config.API.Path+"/", handlerWrapper(tlAPIHandler, db, config, timeLoc, basePath))
+		mux.HandleFunc(config.API.Path+"/", handlerWrapper(tlAPIHandler, db, config, basePath))
 	}
 
 	// For a several layers deep API path like "/api/v1" or more we want to respond with

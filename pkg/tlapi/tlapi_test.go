@@ -61,14 +61,9 @@ func TestAPIHandlerSites(t *testing.T) {
 		basePath = config.API.Path
 	}
 
-	timeLoc, err := time.LoadLocation("GMT")
-	if err != nil {
-		t.Fatalf("unable to load GMT location")
-	}
-
 	// Create Recorder for saving the response.
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(handlerWrapper(tlAPIHandler, db, config, timeLoc, basePath))
+	handler := http.HandlerFunc(handlerWrapper(tlAPIHandler, db, config, basePath))
 
 	// Do request
 	handler.ServeHTTP(rr, req)
@@ -138,14 +133,9 @@ func TestAPIHandlerSitesWithQueryParams(t *testing.T) {
 		basePath = config.API.Path
 	}
 
-	timeLoc, err := time.LoadLocation("GMT")
-	if err != nil {
-		t.Fatalf("unable to load GMT location")
-	}
-
 	// Create Recorder for saving the response.
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(handlerWrapper(tlAPIHandler, db, config, timeLoc, basePath))
+	handler := http.HandlerFunc(handlerWrapper(tlAPIHandler, db, config, basePath))
 
 	// Do request
 	handler.ServeHTTP(rr, req)
@@ -208,14 +198,9 @@ func TestAPIHandlerSite(t *testing.T) {
 		basePath = config.API.Path
 	}
 
-	timeLoc, err := time.LoadLocation("GMT")
-	if err != nil {
-		t.Fatalf("unable to load GMT location")
-	}
-
 	// Create Recorder for saving the response.
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(handlerWrapper(tlAPIHandler, db, config, timeLoc, basePath))
+	handler := http.HandlerFunc(handlerWrapper(tlAPIHandler, db, config, basePath))
 
 	// Do request
 	handler.ServeHTTP(rr, req)
@@ -278,14 +263,9 @@ func TestAPIHandlerRank(t *testing.T) {
 		basePath = config.API.Path
 	}
 
-	timeLoc, err := time.LoadLocation("GMT")
-	if err != nil {
-		t.Fatalf("unable to load GMT location")
-	}
-
 	// Create Recorder for saving the response.
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(handlerWrapper(tlAPIHandler, db, config, timeLoc, basePath))
+	handler := http.HandlerFunc(handlerWrapper(tlAPIHandler, db, config, basePath))
 
 	// Do request
 	handler.ServeHTTP(rr, req)

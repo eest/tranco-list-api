@@ -61,7 +61,6 @@ type request struct {
 	req      *http.Request
 	db       *sql.DB
 	config   *apiServiceConfig
-	timeLoc  *time.Location
 	basePath string
 }
 
